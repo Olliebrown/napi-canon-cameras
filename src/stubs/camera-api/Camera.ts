@@ -8,7 +8,13 @@ import { Volume } from "./Volume";
 
 type PropertyIdentifier = string|number;
 type PropertiesData = {[key in PropertyIdentifier]?: PropertyValue};
-
+type ImageWithHistograms = {
+    image: string,
+    yHistogram: Uint32Array,
+    rHistogram: Uint32Array,
+    gHistogram: Uint32Array,
+    bHistogram: Uint32Array
+}
 export class Camera {
 
     [Symbol.toStringTag] = 'Camera';
@@ -124,6 +130,13 @@ export class Camera {
      * @return {string}
      */
     downloadLiveViewImage(): string {
+        throw new Error("Not implemented - stub only.");
+    }
+
+    /**
+     * @return {string}
+     */
+     downloadLiveViewImageWithHistograms(): ImageWithHistograms {
         throw new Error("Not implemented - stub only.");
     }
 

@@ -318,6 +318,7 @@ namespace CameraApi {
             int imageStringLength;
             unsigned char *imageData;
 
+            // Extract the image
             EdsGetLength(stream, &imageDataLength);
             if (imageDataLength > 0) {
                 EdsGetPointer(stream, (EdsVoid **) &imageData);
@@ -331,7 +332,64 @@ namespace CameraApi {
             EdsRelease(stream);
             stream = nullptr;
         }
+        if (evfImage != nullptr) {
+            EdsRelease(evfImage);
+            evfImage = nullptr;
+        }
+        return error;
+    }
+
+    EdsError Camera::downloadLiveViewImageWithHistograms(std::string &image, uint32_t* yHist, uint32_t* rHist, uint32_t* gHist, uint32_t* bHist) {
+        if (!hasActiveLiveView_) {
+            return EDS_ERR_OK;
+        }
+        EdsError error = EDS_ERR_OK;
+        EdsStreamRef stream = nullptr;
+        EdsEvfImageRef evfImage = nullptr;
+
+        error = EdsCreateMemoryStream(0, &stream);
+        if (error == EDS_ERR_OK) {
+            error = EdsCreateEvfImageRef(stream, &evfImage);
+        }
+        if (error == EDS_ERR_OK) {
+            error = EdsDownloadEvfImage(edsCamera_, evfImage);
+        }
+        if (error == EDS_ERR_OK) {
+            EdsUInt64 imageDataLength;
+            int imageStringLength;
+            unsigned char *imageData;
+
+            // Extract the image
+            EdsGetLength(stream, &imageDataLength);
+            if (imageDataLength > 0) {
+                EdsGetPointer(stream, (EdsVoid **) &imageData);
+
+                char *imageString = base64(imageData, (int) imageDataLength, &imageStringLength);
+                image.assign(imageString);
+                free(imageString);
+            }
+        }
+
+        // Extract the histogram data
+        if (error == EDS_ERR_OK) {
+            error = EdsGetPropertyData(evfImage, kEdsPropID_Evf_HistogramY, 0, 256 * sizeof(EdsUInt32), yHist);
+        }
+        if (error == EDS_ERR_OK) {
+            error = EdsGetPropertyData(evfImage, kEdsPropID_Evf_HistogramR, 0, 256 * sizeof(EdsUInt32), rHist);
+        }
+        if (error == EDS_ERR_OK) {
+            error = EdsGetPropertyData(evfImage, kEdsPropID_Evf_HistogramG, 0, 256 * sizeof(EdsUInt32), gHist);
+        }
+        if (error == EDS_ERR_OK) {
+            error = EdsGetPropertyData(evfImage, kEdsPropID_Evf_HistogramB, 0, 256 * sizeof(EdsUInt32), bHist);
+        }
+
+        // Cleanup
         if (stream != nullptr) {
+            EdsRelease(stream);
+            stream = nullptr;
+        }
+        if (evfImage != nullptr) {
             EdsRelease(evfImage);
             evfImage = nullptr;
         }
@@ -712,6 +770,30 @@ namespace CameraApi {
         return ApiError::ThrowIfFailed(env, error, Napi::String::New(env, image));
     }
 
+    Napi::Value CameraWrap::DownloadLiveViewImageWithHistograms(const Napi::CallbackInfo &info) {
+        Napi::Env env = info.Env();
+
+        // Prepare NAPI structures to hold image and hist data
+        std::string image;
+        Napi::Uint32Array yHist = Napi::TypedArrayOf<uint32_t>::New(env, 256);
+        Napi::Uint32Array rHist = Napi::TypedArrayOf<uint32_t>::New(env, 256);
+        Napi::Uint32Array gHist = Napi::TypedArrayOf<uint32_t>::New(env, 256);
+        Napi::Uint32Array bHist = Napi::TypedArrayOf<uint32_t>::New(env, 256);
+
+        // Retrieve the data
+        EdsError error = camera_->downloadLiveViewImageWithHistograms(image, yHist.Data(), rHist.Data(), gHist.Data(), bHist.Data());
+
+        // Wrap in JS Object
+        Napi::Object imageWithHist = Napi::Object::New(env);
+        obj.Set("image", Napi::String::New(env, image));
+        obj.Set("yHistogram", yHist);
+        obj.Set("rHistogram", rHist);
+        obj.Set("gHistogram", gHist);
+        obj.Set("bHistogram", bHist);
+
+        return ApiError::ThrowIfFailed(env, error, imageWithHist);
+    }
+
     Napi::Value CameraWrap::GetVolumes(const Napi::CallbackInfo &info) {
         Napi::Env env = info.Env();
 
@@ -774,6 +856,7 @@ namespace CameraApi {
                 InstanceMethod("isLiveViewActive", &CameraWrap::IsLiveViewActive),
                 InstanceMethod("stopLiveView", &CameraWrap::StopLiveView),
                 InstanceMethod("downloadLiveViewImage", &CameraWrap::DownloadLiveViewImage),
+                InstanceMethod("downloadLiveViewImageWithHistograms", &CameraWrap::DownloadLiveViewImageWithHistograms),
                 InstanceMethod("getVolumes", &CameraWrap::GetVolumes),
 
                 StaticValue("EventName", eventNames, napi_enumerable),

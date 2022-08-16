@@ -29,6 +29,8 @@ namespace CameraApi {
 
             EdsError downloadLiveViewImage(std::string &image);
 
+            EdsError downloadLiveViewImageWithHistograms(std::string &image, uint32_t* yHist, uint32_t* rHist, uint32_t* gHist, uint32_t* bHist);
+
             inline std::string getDescription() const {
                 return std::string(deviceInfo_.szDeviceDescription);
             }
@@ -141,6 +143,8 @@ namespace CameraApi {
             Napi::Value StopLiveView(const Napi::CallbackInfo &info);
 
             Napi::Value DownloadLiveViewImage(const Napi::CallbackInfo &info);
+
+            Napi::Value DownloadLiveViewImageWithHistograms(const Napi::CallbackInfo &info);
 
             Napi::Value GetVolumes(const Napi::CallbackInfo &info);
     };
