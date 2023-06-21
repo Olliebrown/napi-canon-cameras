@@ -1,9 +1,11 @@
-Please unpack the EDSDK v12.34.56 as `EDSDKv123456X/` into this folder where 'X' should be W for windows and M for mac.
+Please unpack the EDSDK v12.34.56 as `EDSDKv123456X/OS_NAME` into this folder where:
+- 'X' should be W for windows and M for mac.
+- OS_NAME should be 'Windows' for windows and 'macos' for mac
 
 Current configured version:
-- 13.15.20
+- 13.17.00
 
-To try other versions, edit `binding.gyp` and change the edsdk_version variable.
+To try other versions, edit `binding.gyp` and change the edsdk_version variable near the top.
 
 EDSDK v13.14.40+ has an error in `EDSDKTypes.h` that triggers a conflict.
 Change the "ObjectFormat Code (line ~865-873)" to:
