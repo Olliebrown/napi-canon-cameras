@@ -63,6 +63,6 @@
     "ts-jest": "^28.0.7",
     "ts-node": "^10.9.1",
     "typescript": "^4.7.4",
-    "uglifyjs": "^2.4.11"
+    "uglify-js": "^3.17.4"
   }
 }

@@ -1,5 +1,6 @@
 {
     "variables": {
+        "openssl_fips": "",
         "edsdk_version": "131700",
         "edsdk_directory%": "EDSDK"
     },
